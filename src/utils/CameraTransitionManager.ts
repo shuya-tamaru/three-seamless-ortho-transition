@@ -14,7 +14,7 @@ export interface FrustumUpdateResult {
   overrideFov?: number;
 }
 
-export class DollyZoomManager {
+export class CameraTransitionManager {
   private static readonly DEFAULT_FOV = 45;
   private static readonly MIN_FOV = 7;
   private static readonly TRANSITION_ANGLE = 0.2;

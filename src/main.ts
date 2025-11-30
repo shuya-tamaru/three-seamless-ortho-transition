@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { ModelLoader } from "./utils/ModelLoader";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
-import { DollyZoomManager } from "./utils/DollyZoomManager";
+import { ModelLoader } from "./utils/ModelLoader";
+import { CameraTransitionManager } from "./utils/CameraTransitionManager";
 import { createViewElement } from "./utils/CreateViewElement";
 
 //scene setup
@@ -10,13 +10,6 @@ const scene = new THREE.Scene();
 const aspect = (window.innerWidth * 0.5) / window.innerHeight;
 
 //resource load
-const hdrLoader = new HDRLoader();
-hdrLoader.load("./hdr.hdr", (texture) => {
-  texture.mapping = THREE.EquirectangularReflectionMapping;
-  scene.environment = texture;
-  scene.background = new THREE.Color("#fff");
-});
-
 const modelLoader = new ModelLoader();
 modelLoader.load("./model.glb").then((gltf) => {
   scene.add(gltf.scene);
@@ -25,6 +18,24 @@ modelLoader.load("./model.glb").then((gltf) => {
     spinnerContainer.style.display = "none";
   }
 });
+
+const hdrLoader = new HDRLoader();
+hdrLoader.load("./hdr.hdr", (texture) => {
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  scene.environment = texture;
+  scene.background = new THREE.Color("#fff");
+});
+
+//renderer setup
+const renderer = new THREE.WebGLRenderer();
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.domElement.style.position = "absolute";
+renderer.domElement.style.top = "0";
+renderer.domElement.style.left = "0";
+renderer.domElement.style.zIndex = "1";
+renderer.domElement.style.pointerEvents = "none";
+document.body.appendChild(renderer.domElement);
 
 //camera setup
 const frustumSize = 200;
@@ -67,16 +78,7 @@ observerCamera.layers.enable(1);
 observerCamera.position.set(0, 40, 1000);
 observerCamera.lookAt(0, 0, 0);
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.domElement.style.position = "absolute";
-renderer.domElement.style.top = "0";
-renderer.domElement.style.left = "0";
-renderer.domElement.style.zIndex = "1";
-renderer.domElement.style.pointerEvents = "none";
-document.body.appendChild(renderer.domElement);
-
+//controls setup
 const mainControls = new OrbitControls(mainCamera, mainViewDiv);
 mainControls.enableDamping = true;
 mainControls.minPolarAngle = 0;
@@ -95,7 +97,6 @@ function resize() {
   const newAspect = (window.innerWidth * 0.5) / window.innerHeight;
   renderer.setSize(window.innerWidth, window.innerHeight);
 
-  // カメラのアスペクト比を更新
   const mainIsPerspective = mainCamera instanceof THREE.PerspectiveCamera;
   if (mainIsPerspective) {
     mainCameraPerspective.aspect = newAspect;
@@ -108,7 +109,6 @@ function resize() {
     mainCameraOrthographic.updateProjectionMatrix();
   }
 
-  // Observerカメラの視錐台を更新
   observerCamera.left = (frustumSize * newAspect) / -2;
   observerCamera.right = (frustumSize * newAspect) / 2;
   observerCamera.top = frustumSize / 2;
@@ -124,7 +124,10 @@ function animate() {
   observerControls.update();
   cameraHelper.update();
 
-  const result = DollyZoomManager.updateFrustum(mainControls, mainCamera);
+  const result = CameraTransitionManager.updateFrustum(
+    mainControls,
+    mainCamera
+  );
   if (result.shouldSwitch && result.targetType === "orthographic") {
     mainCameraOrthographic.left = result.overrideParams!.left;
     mainCameraOrthographic.right = result.overrideParams!.right;
