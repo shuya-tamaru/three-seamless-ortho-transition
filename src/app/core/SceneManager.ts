@@ -15,7 +15,6 @@ export class SceneManager {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       this.scene.environment = texture;
       this.scene.background = new THREE.Color("#fff");
-      this.scene.backgroundBlurriness = 0.9;
     });
   }
 
