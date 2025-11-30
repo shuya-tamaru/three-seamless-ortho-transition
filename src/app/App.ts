@@ -1,30 +1,22 @@
 import { CameraManager } from "./core/CameraManager";
 import { ControlsManager } from "./core/ControlManager";
+import { ModelLoader } from "./core/ModelLoader";
 import { RendererManager } from "./core/RendererManager";
 import { SceneManager } from "./core/SceneManager";
-import { Cloud } from "./gfx/Cloud";
-import { CloudConfig } from "./gfx/cloudConfig";
-import { Sun } from "./gfx/Sun";
-import { ParamsControls } from "./utils/ParamsControls";
+import * as THREE from "three";
 
 export class App {
   private sceneManager!: SceneManager;
   private cameraManager!: CameraManager;
   private rendererManager!: RendererManager;
   private controlsManager!: ControlsManager;
+  private modelLoader!: ModelLoader;
 
   private animationId?: number;
 
   private width: number;
   private height: number;
   private aspect: number;
-
-  // private cloud!: Cloud;
-  // private cloudConfig!: CloudConfig;
-  private cloud!: Cloud;
-  private cloudConfig!: CloudConfig;
-  private paramsControls!: ParamsControls;
-  private sun!: Sun;
 
   constructor() {
     this.width = window.innerWidth;
@@ -49,23 +41,13 @@ export class App {
       this.cameraManager.camera,
       this.rendererManager.renderer.domElement
     );
-
-    this.cloudConfig = new CloudConfig();
-    this.cloud = new Cloud(
-      this.sceneManager.scene,
-      this.rendererManager.renderer,
-      this.cloudConfig
-    );
-    this.paramsControls = new ParamsControls(this.cloudConfig, this.cloud);
-    // this.sun = new Sun(this.sceneManager.scene, this.cloudConfig);
-
-    // new ParamsControls(this.cloudConfig, this.cloud);
+    this.modelLoader = new ModelLoader();
+    this.modelLoader.load("/model.glb").then((gltf) => {
+      this.sceneManager.scene.add(gltf.scene);
+    });
   }
 
-  private addObjectsToScene(): void {
-    this.cloud.addToScene();
-    // this.sun.addToScene();
-  }
+  private addObjectsToScene(): void {}
 
   private handleResize = (): void => {
     this.width = window.innerWidth;
@@ -86,7 +68,7 @@ export class App {
       this.sceneManager.scene,
       this.cameraManager.camera
     );
-    // this.sun.updateLookAt(this.cameraManager.camera.position);
+    console.log(this.cameraManager.camera.position);
   };
 
   private startAnimation(): void {

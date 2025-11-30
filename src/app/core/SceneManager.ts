@@ -1,52 +1,32 @@
 import * as THREE from "three/webgpu";
 
+import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
+
 export class SceneManager {
   public scene: THREE.Scene;
 
   constructor() {
     this.scene = new THREE.Scene();
-    this.scene.background = null; // Skyで背景を描画するためnullに
-    this.createSky();
+    this.setupLights();
+    this.loadEnvironment();
   }
 
-  private createSky() {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1;
-    canvas.height = 32;
+  private loadEnvironment() {
+    new HDRLoader().load("/hdr.hdr", (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      this.scene.environment = texture;
+      this.scene.background = texture;
+      this.scene.backgroundBlurriness = 0.9;
+    });
+  }
 
-    const context = canvas.getContext("2d");
-    if (context) {
-      const gradient = context!.createLinearGradient(0, 0, 0, 32);
-      // gradient.addColorStop(0.0, "#FFB6B6"); // 明るい赤（上部）
-      // gradient.addColorStop(0.5, "#FF7F7F"); // 中間
-      // gradient.addColorStop(1.0, "#C94A4A"); // 赤（下部）
-      // gradient.addColorStop(0.0, "#87CEEB"); // 明るい空色（上部）
-      // gradient.addColorStop(0.5, "#5B9BD5"); // 中間
-      // gradient.addColorStop(1.0, "#4682B4"); // 青（下部）
+  private setupLights() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    this.scene.add(ambientLight);
 
-      gradient.addColorStop(0.0, "#87CEEB"); // 明るい空色（上部）
-      gradient.addColorStop(0.5, "#5B9BD5"); // 中間
-      gradient.addColorStop(1.0, "#4682B4"); // 青（下部）
-      context!.fillStyle = gradient;
-      context!.fillRect(0, 0, 1, 32);
-
-      const skyMap = new THREE.CanvasTexture(canvas);
-      skyMap.colorSpace = THREE.SRGBColorSpace;
-
-      const boxSizeMax = Math.max(1000, 600, 1000); // 1000
-      const skyRadius = boxSizeMax * 1.5; // 1500
-
-      const sky = new THREE.Mesh(
-        new THREE.SphereGeometry(skyRadius),
-        new THREE.MeshBasicNodeMaterial({
-          map: skyMap,
-          side: THREE.BackSide,
-          depthWrite: false, // 背景として機能させる
-          depthTest: false, // 常に背景として描画
-        })
-      );
-      this.scene.add(sky);
-    }
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 10, 7.5);
+    this.scene.add(directionalLight);
   }
 
   public add(object: THREE.Object3D) {
